@@ -45,7 +45,7 @@ const oAuthProviders = [
   })
 ];
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: process.env.VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "development"
     ? testProvider
     : oAuthProviders
