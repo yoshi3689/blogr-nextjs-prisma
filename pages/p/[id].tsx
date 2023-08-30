@@ -54,13 +54,18 @@ const Post: React.FC<DraftProps> = (props) => {
       <div>
         <h2>
           {title}
-          {props.session?.user?.email}
-          {props.post.author?.email}
+          <p>{props.session?.user?.email}</p>
+          <p>{props.post.author?.email}</p>
         </h2>
         <p>By {props?.post.author?.name || "Unknown author"}</p>
         <ReactMarkdown children={props.post.content} />
         {!props.post.published && props.session && postBelongsToUser && (
-          <button onClick={() => publishPost(props.post.id)}>Publish</button>
+          <>
+            <button onClick={() => publishPost(props.post.id)}>Publish</button>
+            <p>{!props.post.published}</p>
+            <p>{Boolean(props.session)}</p>
+            <p>{postBelongsToUser}</p>
+          </>
         )}
       </div>
       <style jsx>{`
