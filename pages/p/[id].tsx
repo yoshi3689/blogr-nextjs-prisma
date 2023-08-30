@@ -52,7 +52,11 @@ const Post: React.FC<DraftProps> = (props) => {
   return (
     <Layout>
       <div>
-        <h2>{title}</h2>
+        <h2>
+          {title}
+          {props.session?.user?.email}
+          {props.post.author?.email}
+        </h2>
         <p>By {props?.post.author?.name || "Unknown author"}</p>
         <ReactMarkdown children={props.post.content} />
         {!props.post.published && props.session && postBelongsToUser && (
