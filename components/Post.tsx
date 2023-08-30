@@ -1,6 +1,7 @@
 import React from "react";
 import Router from "next/router";
 import ReactMarkdown from "react-markdown";
+import { Session } from "next-auth";
 
 export type PostProps = {
   id: string;
@@ -12,6 +13,12 @@ export type PostProps = {
   content: string;
   published: boolean;
 };
+
+export type DraftProps = {
+  post: PostProps,
+  // As you learned, you can use interface as type
+  session: Session
+}
 
 const Post: React.FC<{ post: PostProps }> = ({ post }) => {
   const authorName = post.author ? post.author.name : "Unknown author";

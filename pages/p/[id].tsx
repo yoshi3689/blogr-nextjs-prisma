@@ -2,12 +2,17 @@ import React from "react"
 import { GetServerSideProps } from "next"
 import ReactMarkdown from "react-markdown"
 import Layout from "../../components/Layout"
-import { PostProps } from "../../components/Post"
+import { DraftProps, PostProps } from "../../components/Post"
 import prisma from "../../lib/prisma"
 import Router from "next/router"
 import { useSession } from "next-auth/react"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "../api/auth/[...nextauth]"
+import { AppProps } from "next/app"
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps = async ({ params, req, res }) => {
+  // using the value of id in params object containing query parameters, 
+  // a post matching the id is fetched
   const post = await prisma.post.findUnique({
     where: {
       id: String(params?.id),
@@ -18,8 +23,10 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       },
     },
   });
+  const session = await getServerSession(req, res, authOptions);
+  
   return {
-    props: post,
+    props: {post, session},
   };
 };
 
@@ -30,16 +37,15 @@ async function publishPost(id: string): Promise<void> {
   await Router.push("/");
 }
 
-const Post: React.FC<PostProps> = (props) => {
-  const { data: session, status } = useSession();
+const Post: React.FC<DraftProps> = (props) => {
   
-  if (status === "loading") {
-    return <div>Authenticating ...</div>;
-  }
-  const userHasValidSession = Boolean(session);
-  const postBelongsToUser = session?.user?.email === props.author?.email;
-  let title = props.title;
-  if (!props.published) {
+  // if (status === "loading") {
+  //   return <div>Authenticating ...</div>;
+  // }
+  // const userHasValidSession = Boolean(session);
+  const postBelongsToUser = props.session?.user?.email === props.post.author?.email;
+  let title = props.post.title;
+  if (!props.post.published) {
     title = `${title} (Draft)`;
   }
 
@@ -47,10 +53,10 @@ const Post: React.FC<PostProps> = (props) => {
     <Layout>
       <div>
         <h2>{title}</h2>
-        <p>By {props?.author?.name || "Unknown author"}</p>
-        <ReactMarkdown children={props.content} />
-        {!props.published && userHasValidSession && postBelongsToUser && (
-          <button onClick={() => publishPost(props.id)}>Publish</button>
+        <p>By {props?.post.author?.name || "Unknown author"}</p>
+        <ReactMarkdown children={props.post.content} />
+        {!props.post.published && props.session && postBelongsToUser && (
+          <button onClick={() => publishPost(props.post.id)}>Publish</button>
         )}
       </div>
       <style jsx>{`
