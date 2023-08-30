@@ -2,12 +2,10 @@ import React from "react"
 import { GetServerSideProps } from "next"
 import ReactMarkdown from "react-markdown"
 import Layout from "../../components/Layout"
-import { DraftProps, PostProps } from "../../components/Post"
+import { PostProps } from "../../components/Post"
 import prisma from "../../lib/prisma"
 import Router from "next/router"
 import { useSession } from "next-auth/react"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../api/auth/[...nextauth]"
 
 export const getServerSideProps: GetServerSideProps = async ({ params, req, res }) => {
   // using the value of id in params object containing query parameters, 
