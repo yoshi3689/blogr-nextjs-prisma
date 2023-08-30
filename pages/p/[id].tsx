@@ -22,10 +22,10 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       },
     },
   });
-  const session = await getServerSession(req, res, authOptions);
+  // const session = await getServerSession(req, res, authOptions);
   
   return {
-    props: {post, session},
+    props: post,
   };
 };
 
@@ -36,15 +36,15 @@ async function publishPost(id: string): Promise<void> {
   await Router.push("/");
 }
 
-const Post: React.FC<DraftProps> = (props) => {
+const Post: React.FC<PostProps> = (props) => {
   const { data: session } = useSession();
   // if (status === "loading") {
   //   return <div>Authenticating ...</div>;
   // }
   // const userHasValidSession = Boolean(session);
-  const postBelongsToUser = session?.user?.email === props.post.author?.email;
-  let title = props.post.title;
-  if (!props.post.published) {
+  const postBelongsToUser = session?.user?.email === props.author?.email;
+  let title = props.title;
+  if (!props.published) {
     title = `${title} (Draft)`;
   }
 
@@ -54,16 +54,16 @@ const Post: React.FC<DraftProps> = (props) => {
         <h2>
           {title}
           <p>{session?.user?.email}</p>
-          <p>{props.post.author?.email}</p>
-          <p>{!props.post.published}</p>
+          <p>{props.author?.email}</p>
+          <p>{!props.published}</p>
           <p>{Boolean(session)}</p>
           <p>{postBelongsToUser}</p>
         </h2>
-        <p>By {props?.post.author?.name || "Unknown author"}</p>
-        <ReactMarkdown children={props.post.content} />
-        {!props.post.published && session && (
+        <p>By {props?.author?.name || "Unknown author"}</p>
+        <ReactMarkdown children={props.content} />
+        {!props.published && session && (
           <>
-            <button onClick={() => publishPost(props.post.id)}>Publish</button>
+            <button onClick={() => publishPost(props.id)}>Publish</button>
           </>
         )}
       </div>
