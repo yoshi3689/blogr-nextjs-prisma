@@ -62,7 +62,7 @@ const Post: React.FC<DraftProps> = (props) => {
         </h2>
         <p>By {props?.post.author?.name || "Unknown author"}</p>
         <ReactMarkdown children={props.post.content} />
-        {!props.post.published && props.session && postBelongsToUser && (
+        {!props.post.published && props.session && (
           <>
             <button onClick={() => publishPost(props.post.id)}>Publish</button>
           </>
