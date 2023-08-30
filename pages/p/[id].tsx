@@ -8,7 +8,6 @@ import Router from "next/router"
 import { useSession } from "next-auth/react"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../api/auth/[...nextauth]"
-import { AppProps } from "next/app"
 
 export const getServerSideProps: GetServerSideProps = async ({ params, req, res }) => {
   // using the value of id in params object containing query parameters, 
@@ -38,12 +37,12 @@ async function publishPost(id: string): Promise<void> {
 }
 
 const Post: React.FC<DraftProps> = (props) => {
-  
+  const { data: session } = useSession();
   // if (status === "loading") {
   //   return <div>Authenticating ...</div>;
   // }
   // const userHasValidSession = Boolean(session);
-  const postBelongsToUser = props.session?.user?.email === props.post.author?.email;
+  const postBelongsToUser = session?.user?.email === props.post.author?.email;
   let title = props.post.title;
   if (!props.post.published) {
     title = `${title} (Draft)`;
@@ -54,15 +53,15 @@ const Post: React.FC<DraftProps> = (props) => {
       <div>
         <h2>
           {title}
-          <p>{props.session?.user?.email}</p>
+          <p>{session?.user?.email}</p>
           <p>{props.post.author?.email}</p>
           <p>{!props.post.published}</p>
-          <p>{Boolean(props.session)}</p>
+          <p>{Boolean(session)}</p>
           <p>{postBelongsToUser}</p>
         </h2>
         <p>By {props?.post.author?.name || "Unknown author"}</p>
         <ReactMarkdown children={props.post.content} />
-        {!props.post.published && props.session && (
+        {!props.post.published && session && (
           <>
             <button onClick={() => publishPost(props.post.id)}>Publish</button>
           </>
