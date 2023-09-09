@@ -1,65 +1,63 @@
-import { writeFile } from "fs/promises";
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
-// import { NextRequest, NextResponse } from "next/server";
-import path from "path";
-import fs from "fs/promises";
+import { S3Client, PutObjectCommand, GetObjectCommand, PutObjectCommandOutput } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { NextRequest, NextResponse } from "next/server";
+// import { NextAPIRequest, NextAPIResponse } from "next/server";
 
-import formidable from "formidable";
-
+// the below config is necessary to make req.formData() work
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  runtime: "edge"
 };
 
-const readFile = (req: NextApiRequest, saveLocally?: boolean)
-  : Promise<{ fields: formidable.Fields; files: formidable.Files }> => {
-  const options: formidable.Options = {};
-  // fill options object if uploading locally
-  if (saveLocally) {
-    options.uploadDir = path.join(process.cwd(), "public/images")
-    options.filename = (name, ext, path, form) => {
-      return Date.now().toString() + "_" + path.originalFilename;
-    }
-  }
+export type UploadResult = {
+  uploadResult: PutObjectCommandOutput,
+  success: boolean,
+  presignedUrl: string
+};
 
-  const form = formidable(options);
-  return new Promise((resolve, reject) => {
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      resolve({fields, files})
-    })
-  })
-  
+const s3 = new S3Client({
+  region: process.env.REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
-  
-}
+export default async function handler(request: NextRequest) {
+  const form = await request.formData();
+  const file: File | null = (form.get('file') as unknown as File);
 
-const handler: NextApiHandler = async (req, res) => {
+  const putCommand = new PutObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: file.name,
+    // need to convert a file to an array buffer
+    // then convert it to a Buffer object
+    Body: Buffer.from(await file.arrayBuffer()),
+    ContentType: file.type,
+    ACL: "public-read",
+  });
+
   try {
-    await fs.readdir(path.join(process.cwd() + "/public", "/images"))
+    // aws es3
+    // put an object
+    const uploadResult = await s3.send(putCommand);
+    console.log(uploadResult);
+
+    // get a presignedUrl of the object uploaded
+    const getCommand = new GetObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: file.name,
+    });
+    const presignedUrl: string =
+      await getSignedUrl(s3, getCommand, { expiresIn: 3600 });
+    const result : UploadResult = { success: true, uploadResult, presignedUrl };
+    return NextResponse.json(
+      result, { status: 200 }
+    );
+
   } catch (err) {
-    await fs.mkdir(path.join(process.cwd() + "/public", "/images"))
+    console.error(err)
+    return NextResponse.json({ success: false, message: err }, {
+      status: 405
+    });
   }
-  await readFile(req, true);
-  res.json({ success: true });
 }
-
-export default handler;
-
-// const file: File | null = data.get("file") as unknown as File;
-
-//   if (!file) {
-//     return res.json({ success: false });
-//   }
-
-//   const bytes = await file.arrayBuffer();
-//   const buffer = Buffer.from(bytes);
-
-//   // With the file data in the buffer, you can do whatever you want with it.
-//   // For this, we'll just write it to the filesystem in a new location
-//   const path = `/tmp/${file.name}`;
-//   await writeFile(path, buffer);
-//   console.log(`open ${path} to see the uploaded file`);
-
-//   return res.json({ success: true });
